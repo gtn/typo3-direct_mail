@@ -30,6 +30,7 @@ use TYPO3\CMS\Core\Error\Http\ServiceUnavailableException;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\ImmediateResponseException;
+use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Routing\InvalidRouteArgumentsException;
@@ -1658,10 +1659,10 @@ final class DmailController extends MainController
                         } elseif ($this->userTable && ($whichTables&4)) {
                             $table = $this->userTable;
                         }
-
                         if ($table) {
                             $queryGenerator = GeneralUtility::makeInstance(DmQueryGenerator::class, $this->iconFactory, GeneralUtility::makeInstance(UriBuilder::class), $this->moduleTemplateFactory);
-                            $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList($queryGenerator, $table, $mailGroup);
+                            $request = GeneralUtility::makeInstance(ServerRequest::class);
+                            $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList($queryGenerator, $table, $mailGroup, $request);
                         }
                         break;
                     case 4:
@@ -1696,7 +1697,8 @@ final class DmailController extends MainController
         $set = $this->set;
         $queryTable = $set['queryTable'] ?? '';
         $queryLimit = $set['queryLimit'] ?? $mailGroup['queryLimit'] ?? 100;
-        $queryLimitDisabled = ($set['queryLimitDisabled'] ?? $mailGroup['queryLimitDisabled']) == '' ? 0 : 1;
+//        $queryLimitDisabled = ($set['queryLimitDisabled'] ?? $mailGroup['queryLimitDisabled']) == '' ? 0 : 1;
+        $queryLimitDisabled = (isset($set['queryLimitDisabled']) ? $set['queryLimitDisabled'] : ($mailGroup['queryLimitDisabled'] == '' ? 0 : 1));
         $queryConfig = $this->queryConfig;
         $whichTables = (int)$mailGroup['whichtables'];
         $table = '';

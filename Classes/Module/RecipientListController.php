@@ -14,6 +14,7 @@ use DirectMailTeam\DirectMail\Repository\SysDmailGroupRepository;
 use DirectMailTeam\DirectMail\Repository\TempRepository;
 use DirectMailTeam\DirectMail\Repository\TtAddressRepository;
 use DirectMailTeam\DirectMail\Utility\DmCsvUtility;
+use DirectMailTeam\DirectMail\Utility\TsUtility;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -67,13 +68,13 @@ final class RecipientListController extends MainController
         protected string $table = '',
         protected array $indata = [],
 
-        
+
         protected $requestUri = '',
-        
+
         protected array $allowedTables = ['tt_address', 'fe_users'],
 
         protected bool $submit = false,
-        protected string $queryConfig = '',
+        protected array $queryConfig = [],
     ) {
     }
 
@@ -84,6 +85,7 @@ final class RecipientListController extends MainController
 
         $this->request = $request;
         $this->queryParams = $request->getQueryParams();
+
         $parsedBody = $request->getParsedBody();
 
         $this->id = (int)($parsedBody['id'] ?? $this->queryParams['id'] ?? 0);
@@ -94,7 +96,7 @@ final class RecipientListController extends MainController
 
         $normalizedParams = $request->getAttribute('normalizedParams');
         $this->requestUri = $normalizedParams->getRequestUri();
-        
+
         $this->cmd = (string)($parsedBody['cmd'] ?? $this->queryParams['cmd'] ?? '');
         $this->group_uid = (int)($parsedBody['group_uid'] ?? $this->queryParams['group_uid'] ?? 0);
         $this->lCmd = $parsedBody['lCmd'] ?? $this->queryParams['lCmd'] ?? '';
@@ -105,8 +107,14 @@ final class RecipientListController extends MainController
         $this->table = (string)($parsedBody['table'] ?? $this->queryParams['table'] ?? '');
         $this->indata = $parsedBody['indata'] ?? $this->queryParams['indata'] ?? [];
         $this->submit = (bool)($parsedBody['submit'] ?? $this->queryParams['submit'] ?? false);
+        $this->queryConfig = ($parsedBody['queryConfig'] ?? $this->queryParams['queryConfig'] ?? []);
 
-        $this->queryConfig = (string)($parsedBody['queryConfig'] ?? $this->queryParams['queryConfig'] ?? '');
+        // get the config from pageTS
+        $this->params = BackendUtility::getPagesTSconfig($this->id)['mod.']['web_modules.']['dmail.'] ?? [];
+        if ($this->params['userTable'] ?? false && isset($GLOBALS['TCA'][$this->params['userTable']]) && is_array($GLOBALS['TCA'][$this->params['userTable']])) {
+            $this->userTable = $this->params['userTable'];
+            $this->allowedTables[] = $this->userTable;
+        }
 
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         return $this->indexAction($moduleTemplate);
@@ -115,7 +123,6 @@ final class RecipientListController extends MainController
     public function indexAction(ModuleTemplate $view): ResponseInterface
     {
         if (($this->id && $this->access) || ($this->isAdmin() && !$this->id)) {
-
             $module = $this->getModulName();
 
             if ($module == 'dmail') {
@@ -212,14 +219,14 @@ final class RecipientListController extends MainController
             ]),
             'rows' => [],
             'sysDmailGroupIcon' => $this->iconFactory->getIconForRecord(
-                'sys_dmail_group', 
-                [], 
+                'sys_dmail_group',
+                [],
                 Icon::SIZE_SMALL
             )
         ];
 
         $rows = GeneralUtility::makeInstance(SysDmailGroupRepository::class)->selectSysDmailGroupByPid(
-            $this->id, 
+            $this->id,
             trim($GLOBALS['TCA']['sys_dmail_group']['ctrl']['default_sortby'])
         );
 
@@ -347,15 +354,16 @@ final class RecipientListController extends MainController
 
                         if ($table) {
                             $queryGenerator = GeneralUtility::makeInstance(
-                                DmQueryGenerator::class, 
-                                $this->iconFactory, 
-                                GeneralUtility::makeInstance(UriBuilder::class), 
+                                DmQueryGenerator::class,
+                                $this->iconFactory,
+                                GeneralUtility::makeInstance(UriBuilder::class),
                                 $this->moduleTemplateFactory
                             );
                             $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList(
-                                $queryGenerator, 
-                                $table, 
-                                $mailGroup
+                                $queryGenerator,
+                                $table,
+                                $mailGroup,
+                                $this->request
                             );
                         }
                         break;
@@ -522,7 +530,7 @@ final class RecipientListController extends MainController
                 }
                 if (is_array($idLists[DmailRecipientEnum::FeUsers->value] ?? false)) {
                     $rows = GeneralUtility::makeInstance(TempRepository::class)->fetchRecordsListValues(
-                        $idLists[DmailRecipientEnum::FeUsers->value], 
+                        $idLists[DmailRecipientEnum::FeUsers->value],
                         DmailRecipientEnum::FeUsers->value
                     );
                     $data['tables'][] = [
@@ -540,7 +548,7 @@ final class RecipientListController extends MainController
                 }
                 if (!in_array($this->userTable, [DmailRecipientEnum::TtAddress->value, DmailRecipientEnum::FeUsers->value, DmailRecipientEnum::Plainlist->value]) && is_array($idLists[$this->userTable] ?? false)) {
                     $rows = GeneralUtility::makeInstance(TempRepository::class)->fetchRecordsListValues(
-                        $idLists[$this->userTable], 
+                        $idLists[$this->userTable],
                         $this->userTable
                     );
                     $data['tables'][] = [
@@ -605,8 +613,8 @@ final class RecipientListController extends MainController
                     ];
                 }
 
-                if (!in_array($this->userTable, [DmailRecipientEnum::TtAddress->value, DmailRecipientEnum::FeUsers->value, DmailRecipientEnum::Plainlist->value]) 
-                    && is_array($idLists[$this->userTable] ?? false) 
+                if (!in_array($this->userTable, [DmailRecipientEnum::TtAddress->value, DmailRecipientEnum::FeUsers->value, DmailRecipientEnum::Plainlist->value])
+                    && is_array($idLists[$this->userTable] ?? false)
                     && count($idLists[$this->userTable])) {
                     $data['tables'][] = [
                         'title_table' => 'mailgroup_table_custom',
@@ -627,7 +635,12 @@ final class RecipientListController extends MainController
 
                 if (($group['type'] ?? false) == 3) {
                     if ($this->getBackendUser()->check('tables_modify', 'sys_dmail_group')) {
-                        $data['special'] = $this->specialQuery();
+                        $table = '';
+                        if (isset($result['queryInfo']['id_lists'])) {
+                            $tables = array_keys($result['queryInfo']['id_lists']);
+                            $table = reset($tables);
+                        }
+                        $data['special'] = $this->specialQuery($table, $group);
                     }
                 }
         }
@@ -645,9 +658,11 @@ final class RecipientListController extends MainController
     protected function updateSpecialQuery(array $mailGroup): array
     {
         $set = $this->set;
+
         $queryTable = $set['queryTable'] ?? '';
         $queryLimit = $set['queryLimit'] ?? $mailGroup['queryLimit'] ?? 100;
-        $queryLimitDisabled = ($set['queryLimitDisabled'] ?? $mailGroup['queryLimitDisabled']) == '' ? 0 : 1;
+        $queryLimitDisabled = (isset($set['queryLimitDisabled']) ? $set['queryLimitDisabled'] : ($mailGroup['queryLimitDisabled'] ? 1 : 0));
+
         $queryConfig = $this->queryConfig;
         $whichTables = (int)$mailGroup['whichtables'];
         $table = '';
@@ -669,7 +684,6 @@ final class RecipientListController extends MainController
         if ($this->MOD_SETTINGS['queryTable'] != $table) {
             $this->MOD_SETTINGS['queryConfig'] = '';
         }
-
         $this->MOD_SETTINGS['queryLimit'] = $queryLimit;
 
         if ($this->MOD_SETTINGS['queryTable'] != $table
@@ -695,6 +709,7 @@ final class RecipientListController extends MainController
             $done = GeneralUtility::makeInstance(SysDmailGroupRepository::class)->updateSysDmailGroupRecord((int)$mailGroup['uid'], $updateFields);
             $mailGroup = BackendUtility::getRecord('sys_dmail_group', $mailGroup['uid']);
         }
+
         return $mailGroup;
     }
 
@@ -703,24 +718,39 @@ final class RecipientListController extends MainController
      *
      * @return array HTML form to make a special query
      */
-    protected function specialQuery(): array
+    protected function specialQuery($table = '', $mailGroup = []): array
     {
         $queryGenerator = GeneralUtility::makeInstance(
-            DmQueryGenerator::class, 
-            $this->iconFactory, 
-            GeneralUtility::makeInstance(UriBuilder::class), 
+            DmQueryGenerator::class,
+            $this->iconFactory,
+            GeneralUtility::makeInstance(UriBuilder::class),
             $this->moduleTemplateFactory
         );
+
+        if (!@$this->MOD_SETTINGS['queryConfig'] && $mailGroup) {
+            $queryConfig = $mailGroup['query'];
+            if ($queryConfig) {
+                if (is_array($queryConfig)) {
+                    $this->MOD_SETTINGS['queryConfig'] = serialize($queryConfig);
+                } else {
+                    $this->MOD_SETTINGS['queryConfig'] = $queryConfig;
+                }
+            }
+        }
+
+        if ($table) {
+            $queryGenerator->init2($table, $this->MOD_SETTINGS);
+        }
+
         //$queryGenerator->setFormName('dmailform');
         $queryGenerator->setFormName('queryform');
-
         //if ($this->MOD_SETTINGS['queryTable'] && $this->MOD_SETTINGS['queryConfig']) {
         //    $queryGenerator->extFieldLists['queryFields'] = 'uid';
         //}
         $this->pageRenderer->loadJavaScriptModule('@typo3/lowlevel/query-generator.js');
         $this->pageRenderer->loadJavaScriptModule('@typo3/backend/date-time-picker.js');
 
-        [$html, $query] = $queryGenerator->queryMakerDM($this->request, $this->allowedTables);
+        [$html, $query] = $queryGenerator->queryMakerDM($this->request, $this->allowedTables, $this->set, $this->queryConfig);
         return ['selectTables' => $html, 'query' => $query];
     }
 

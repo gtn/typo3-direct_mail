@@ -1,14 +1,14 @@
 <?php
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Direct Mail',
-    'description' => 'Advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics.',
+    'title' => 'Direct Mail - GTN for v12',
+    'description' => 'GTN: changet for Typo3 v12. Advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics.',
     'category' => 'module',
     'author' => 'Ivan Kartolo',
     'author_email' => 'ivan.kartolo@dkd.de',
     'author_company' => 'd.k.d Internet Service GmbH',
     'state' => 'alpha',
-    'version' => '10.0.0',
+    'version' => '10.0.0.gtn.dev',
     'constraints' => [
         'depends' => [
             'typo3' => '12.4.0-12.99.99',
