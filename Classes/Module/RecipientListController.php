@@ -70,7 +70,7 @@ final class RecipientListController extends MainController
         
         protected $requestUri = '',
         
-        protected array $allowedTables = [DmailRecipientEnum::TtAddress->value, DmailRecipientEnum::FeUsers->value],
+        protected array $allowedTables = ['tt_address', 'fe_users'],
 
         protected bool $submit = false,
         protected string $queryConfig = '',

@@ -1,5 +1,6 @@
 {
   "name": "directmailteam/direct-mail",
+  "version": "0.0.1",
   "type": "typo3-cms-extension",
   "description": "Advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics.",
   "keywords": [
