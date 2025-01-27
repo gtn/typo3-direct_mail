@@ -41,7 +41,7 @@ class DmQueryGenerator extends DatabaseIntegrityController
         $request = $GLOBALS['TYPO3_REQUEST'];
         $pageId = $request->getQueryParams()['id'];
         $tsParams = BackendUtility::getPagesTSconfig($pageId)['mod.']['web_modules.']['dmail.'] ?? [];
-        if ($tsParams['userTable']) {
+        if (@$tsParams['userTable']) {
             $addTables = GeneralUtility::trimExplode(',', $tsParams['userTable']);
             $this->allowedTables = array_merge($this->allowedTables, $addTables);
         }
