@@ -211,20 +211,37 @@
 					<f:format.raw>{data.final.finalForm.hookContents}</f:format.raw>
 					<f:translate key="{lll}schedule_time"/>
 					<br>
-					<div class="form-control-wrap">
-						<div class="input-group">
-							<input class="form-control form-control-clearable t3js-datetimepicker t3js-clearable"
-								data-date-type="datetime"
-								data-date-offset="0"
-								type="text"
-								id="tceforms-datetimefield-startdate"
-								name="send_mail_datetime_hr" value="{data.final.finalForm.send_mail_datetime_hr}">
-							<input name="send_mail_datetime" value="{data.final.finalForm.send_mail_datetime}" type="hidden">
-                            <button class="btn btn-default" type="button" data-global-event="click" data-action-focus="#tceforms-datetimefield-startdate">
-                                <core:icon identifier="actions-edit-pick-date" />
-                            </button>
-						</div>
-					</div>
+
+                    <typo3-formengine-element-datetime class="formengine-field-item t3js-formengine-field-item" recordFieldId="formengine-input-send_mail_datetime_hr">
+                        <div class="form-control-wrap">
+
+                            <div class="form-wizards-wrap">
+                                <div class="form-wizards-element">
+                                    <div class="input-group">
+                                        <button class="btn btn-default" type="button" data-global-event="click" data-action-focus="#tceforms-datetimefield-send_mail_datetime_hr">
+                                            <core:icon identifier="actions-edit-pick-date" />
+                                        </button>
+                                        <input
+                                            name="send_mail_datetime_hr"
+                                            id="tceforms-datetimefield-send_mail_datetime_hr"
+                                            class="form-control form-control-clearable t3js-datetimepicker t3js-clearable"
+                                            data-input-type="datetimepicker"
+                                            data-date-type="datetime"
+                                            data-formengine-input-name="send_mail_datetime_hr"
+                                            data-formengine-input-params='{"field":"send_mail_datetime_hr","evalList":"datetime"}'
+                                            type="text"
+                                            data-formengine-validation-rules='[{"type": "range","upper":"2038-01-01T00:00:00+00:00"}]'
+                                            value="{data.final.finalForm.send_mail_datetime_hr}"
+                                        >
+                                        <f:comment>
+                                        <input type="hidden" name="send_mail_datetime_hr" value="{data.final.finalForm.send_mail_datetime_hr}" />
+                                        <input name="send_mail_datetime" value="{data.final.finalForm.send_mail_datetime}" type="hidden">
+                                        </f:comment>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </typo3-formengine-element-datetime>
 					<br>
 					<br>
 					<label for="tx-directmail-sendtestmail-check">

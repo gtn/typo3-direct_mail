@@ -202,7 +202,9 @@ final class DmailController extends MainController
             if ($module == 'dmail') {
                 // Direct mail module
                 if (($this->pageinfo['doktype'] ?? 0) == 254) {
-                    $this->pageRenderer->loadJavaScriptModule('@typo3/backend/date-time-picker.js');
+                    $this->pageRenderer->loadRequireJs();
+//                    $this->pageRenderer->loadJavaScriptModule('@typo3/backend/date-time-picker.js');
+                    $this->pageRenderer->loadJavaScriptModule('@directmailteam/diractmail/Dmail.js');
                     $markers = $this->moduleContent();
                     $view->assignMultiple(
                         [
@@ -1488,7 +1490,8 @@ final class DmailController extends MainController
             );
             $this->flashMessageQueue->addMessage($message);
         }
-        $sendMailDatetime = date('H:i d-m-Y', time());
+//        $sendMailDatetime = date('H:i d-m-Y', time());
+        $sendMailDatetime = $_POST['send_mail_datetime_hr'] ?: (new \DateTime())->format('c'); // needed format for flatpickr
         return [
             'id' => $this->id,
             'sys_dmail_uid' => $this->sys_dmail_uid,
