@@ -60,6 +60,7 @@ final class DmailController extends MainController
         protected readonly string $moduleName = 'directmail_module_directmail',
         protected readonly string $lllFile = 'LLL:EXT:direct_mail/Resources/Private/Language/locallang_mod2-6.xlf',
         protected ?LanguageService $languageService = null,
+        protected ?ServerRequestInterface $request = null,
         protected array $pageinfo = [],
         protected int $id = 0,
         protected bool $access = false,
@@ -99,6 +100,7 @@ final class DmailController extends MainController
         $this->languageService = $this->getLanguageService();
         $this->flashMessageQueue = $this->getFlashMessageQueue('DmailQueue');
 
+        $this->request = $request;
         $queryParams = $request->getQueryParams();
         $parsedBody = $request->getParsedBody();
 
@@ -1645,7 +1647,7 @@ final class DmailController extends MainController
 
                         if ($table !== '' && $table !== '0') {
                             $queryGenerator = GeneralUtility::makeInstance(DmQueryGenerator::class, $this->iconFactory, GeneralUtility::makeInstance(UriBuilder::class), $this->moduleTemplateFactory);
-                            $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList($queryGenerator, $table, $mailGroup);
+                            $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList($queryGenerator, $table, $mailGroup, $this->request ?? $GLOBALS['TYPO3_REQUEST']);
                         }
                         break;
                     case 4:
@@ -1680,7 +1682,9 @@ final class DmailController extends MainController
         $set = $this->set;
         $queryTable = $set['queryTable'] ?? '';
         $queryLimit = $set['queryLimit'] ?? $mailGroup['queryLimit'] ?? 100;
-        $queryLimitDisabled = ($set['queryLimitDisabled'] ?? $mailGroup['queryLimitDisabled']) == '' ? 0 : 1;
+        // The checkbox is only present in the form when the query form was submitted, so an
+        // unchecked box has to win over the stored value instead of falling back to it.
+        $queryLimitDisabled = isset($set['queryLimitDisabled']) ? (int)$set['queryLimitDisabled'] : ($mailGroup['queryLimitDisabled'] ? 1 : 0);
         $queryConfig = $this->queryConfig;
         $whichTables = (int)$mailGroup['whichtables'];
         $table = '';
