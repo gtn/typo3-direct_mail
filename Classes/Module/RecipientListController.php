@@ -18,7 +18,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
-use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -352,12 +351,7 @@ final class RecipientListController extends MainController
                         }
 
                         if ($table) {
-                            $queryGenerator = GeneralUtility::makeInstance(
-                                DmQueryGenerator::class,
-                                $this->iconFactory,
-                                GeneralUtility::makeInstance(UriBuilder::class),
-                                $this->moduleTemplateFactory
-                            );
+                            $queryGenerator = GeneralUtility::makeInstance(DmQueryGenerator::class);
                             $idLists[$table] = GeneralUtility::makeInstance(TempRepository::class)->getSpecialQueryIdList(
                                 $queryGenerator,
                                 $table,
@@ -719,12 +713,7 @@ final class RecipientListController extends MainController
      */
     protected function specialQuery(string $table = '', array $mailGroup = []): array
     {
-        $queryGenerator = GeneralUtility::makeInstance(
-            DmQueryGenerator::class,
-            $this->iconFactory,
-            GeneralUtility::makeInstance(UriBuilder::class),
-            $this->moduleTemplateFactory
-        );
+        $queryGenerator = GeneralUtility::makeInstance(DmQueryGenerator::class);
 
         // On first display nothing has been submitted yet, so fall back to the query
         // stored on the mail group record.
