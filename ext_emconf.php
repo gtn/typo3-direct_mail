@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Direct Mail',
-    'description' => 'Advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics.',
+    'title' => 'Direct Mail - GTN for v13',
+    'description' => 'GTN: based on the v13 branch of Patta/direct_mail, plus the custom SQL recipient lists. Advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics.',
     'category' => 'module',
     'author' => 'Ivan Kartolo',
     'author_email' => 'ivan.kartolo@dkd.de',
